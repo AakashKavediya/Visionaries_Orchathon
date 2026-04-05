@@ -465,6 +465,24 @@
       color: var(--muted);
       font-size: 14px;
     }
+    .clash-image-thumb {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .clash-image-thumb:hover {
+      transform: scale(1.1);
+    }
+    .clash-image-large {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-top: 10px;
+      border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -551,6 +569,7 @@
           <table id="clashTable">
             <thead>
               <tr>
+                <th>Image</th>
                 <th>Clash</th>
                 <th>Severity</th>
                 <th>Priority</th>
@@ -853,6 +872,16 @@ function candidateTable(cands) {
   `;
 }
 
+function getImagePath(clashId, isThumb = false) {
+  if (!clashId) return "";
+  const match = clashId.match(/\d+$/);
+  if (!match) return "";
+  const num = parseInt(match[0], 10);
+  const paddedNum = String(num).padStart(4, '0');
+  // Assuming the images are in a fixed relative path from the HTML file
+  return `../report/all_files/cd_0_${paddedNum}.jpg`;
+}
+
 function renderClashes(allClashes) {
   const q = (el("search").value || "").trim().toLowerCase();
 
@@ -886,9 +915,13 @@ function renderClashes(allClashes) {
     const e1 = c.element_1 || {};
     const e2 = c.element_2 || {};
     const candidates = Array.isArray(res.all_candidates) ? res.all_candidates : [];
+    const imagePath = getImagePath(c.clash_id);
 
     return `
       <tr>
+        <td>
+          ${imagePath ? `<img src="${imagePath}" alt="Clash ${esc(c.clash_id)}" class="clash-image-thumb">` : ''}
+        </td>
         <td><b>${esc(c.clash_id)}</b><br><span class="fine">${esc(c.guid || "")}</span></td>
         <td><span class="badge ${esc(c.severity || "INFO")}">${esc(c.severity || "INFO")}</span></td>
         <td>${esc(c.priority_score ?? "—")}</td>
@@ -907,9 +940,11 @@ function renderClashes(allClashes) {
         </td>
       </tr>
       <tr>
-        <td colspan="9">
+        <td colspan="10">
           <details>
             <summary>Open full clash details</summary>
+
+            ${imagePath ? `<img src="${imagePath}" alt="Clash ${esc(c.clash_id)}" class="clash-image-large">` : ''}
 
             <div class="detail-grid">
               <div class="detail-box">
