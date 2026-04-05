@@ -5,3 +5,5 @@ prototype/uploads/
 prototype/converted_ifc/
 **/__pycache__/
 *.py[cod]
+.venv
+.vs
