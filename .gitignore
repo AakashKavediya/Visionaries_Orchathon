@@ -1,3 +1,7 @@
 .backend
 extra/hero.xml
 hero.xml
+prototype/uploads/
+prototype/converted_ifc/
+**/__pycache__/
+*.py[cod]

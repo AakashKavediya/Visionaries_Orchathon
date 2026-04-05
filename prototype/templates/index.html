@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVT to IFC Converter – MEP Data Extractor</title>
+    <meta name="description" content="Upload an RVT file, convert to IFC, and instantly view extracted MEP data powered by IfcOpenShell.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* ===== MEP Panel Styles ===== */
+        .mep-section {
+            width: 100%;
+            max-width: 960px;
+            margin: 2rem auto 0;
+            animation: fadeSlideUp 0.5s ease forwards;
+        }
+        .mep-section.hidden { display: none; }
+
+        .mep-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .mep-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mep-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .mep-badge {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            letter-spacing: 0.05em;
+        }
+
+        .mep-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .mep-controls label {
+            font-size: 0.82rem;
+            color: #94a3b8;
+        }
+
+        #mep-type-filter {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #e2e8f0;
+            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #mep-type-filter:focus { border-color: #6366f1; }
+        #mep-type-filter option { background: #1e1e2e; color: #e2e8f0; }
+
+        .mep-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-chip {
+            background: rgba(99,102,241,0.15);
+            border: 1px solid rgba(99,102,241,0.3);
+            border-radius: 10px;
+            padding: 0.45rem 0.9rem;
+            font-size: 0.8rem;
+            color: #a5b4fc;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .stat-chip strong { color: #e2e8f0; font-weight: 600; }
+
+        .mep-table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        #mep-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        #mep-table thead tr {
+            background: rgba(99,102,241,0.2);
+        }
+
+        #mep-table th {
+            padding: 0.8rem 1rem;
+            text-align: left;
+            color: #a5b4fc;
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        #mep-table tbody tr {
+            border-top: 1px solid rgba(255,255,255,0.06);
+            transition: background 0.15s;
+        }
+        #mep-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+        #mep-table td {
+            padding: 0.75rem 1rem;
+            color: #cbd5e1;
+            vertical-align: top;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .type-IfcPipeSegment    { background: rgba(59,130,246,0.2);  color: #93c5fd; border: 1px solid rgba(59,130,246,0.35); }
+        .type-IfcDuctSegment    { background: rgba(16,185,129,0.18); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.35); }
+        .type-IfcFlowTerminal   { background: rgba(245,158,11,0.18); color: #fcd34d; border: 1px solid rgba(245,158,11,0.35); }
+        .type-IfcFlowFitting    { background: rgba(239,68,68,0.18);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.35); }
+        .type-IfcFlowController { background: rgba(167,139,250,0.2); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.35); }
+        .type-default           { background: rgba(148,163,184,0.15);color: #94a3b8; border: 1px solid rgba(148,163,184,0.25); }
+
+        .id-mono {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .props-cell details summary {
+            cursor: pointer;
+            color: #6366f1;
+            font-size: 0.78rem;
+            font-weight: 500;
+            outline: none;
+        }
+        .props-cell details summary:hover { color: #818cf8; }
+        .props-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.2rem 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .props-grid .pk { color: #94a3b8; font-size: 0.75rem; }
+        .props-grid .pv { color: #e2e8f0; font-size: 0.75rem; font-weight: 500; }
+
+        .location-cell { font-size: 0.75rem; color: #64748b; }
+        .location-cell span { display: block; }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #64748b;
+        }
+        .empty-state svg { margin: 0 auto 1rem; display: block; opacity: 0.4; }
+
+        .mep-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 2rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        .mep-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(99,102,241,0.3);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Background decorative elements -->
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+
+        <main class="converter-card">
+            <header>
+                <h1>Model Converter</h1>
+                <p>Upload your <strong>.RVT</strong> file to generate an <strong>.IFC</strong> format instantly.</p>
+            </header>
+
+            <div class="upload-area" id="drop-zone">
+                <input type="file" id="file-input" accept=".rvt" hidden>
+
+                <div class="icon-container" id="upload-icon">
+                    <svg viewBox="0 0 24 24" fill="none" class="cloud-icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                        <path d="M12 15V9"/>
+                        <path d="m9 12 3-3 3 3"/>
+                    </svg>
+                </div>
+
+                <div class="upload-content">
+                    <h3 id="upload-title">Drop your RVT file here</h3>
+                    <p id="upload-subtitle">or <span class="highlight">browse files</span></p>
+                </div>
+
+                <div class="loader-container hidden" id="loader">
+                    <div class="spinner"></div>
+                    <p>Converting to IFC...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress"></div>
+                    </div>
+                </div>
+
+                <div class="success-state hidden" id="success">
+                    <div class="circle-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <h3>Conversion Complete!</h3>
+                    <p id="result-filename">model.ifc</p>
+                    <a href="#" class="btn btn-primary" id="download-btn">Download IFC</a>
+                    <button class="btn btn-secondary" id="reset-btn">Convert Another</button>
+                </div>
+            </div>
+
+            <div id="error-message" class="error-toast hidden"></div>
+        </main>
+
+        <!-- ===== MEP Data Viewer ===== -->
+        <section class="mep-section hidden" id="mep-section" aria-label="MEP Data Viewer">
+            <div class="mep-card">
+                <div class="mep-header">
+                    <h2>
+                        MEP Elements
+                        <span class="mep-badge">IfcOpenShell</span>
+                    </h2>
+                    <div class="mep-controls">
+                        <label for="mep-type-filter">Filter by type:</label>
+                        <select id="mep-type-filter">
+                            <option value="all">All Types</option>
+                            <option value="IfcPipeSegment">IfcPipeSegment</option>
+                            <option value="IfcDuctSegment">IfcDuctSegment</option>
+                            <option value="IfcFlowTerminal">IfcFlowTerminal</option>
+                            <option value="IfcFlowFitting">IfcFlowFitting</option>
+                            <option value="IfcFlowController">IfcFlowController</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Loading state -->
+                <div class="mep-loading hidden" id="mep-loading">
+                    <div class="mep-spinner"></div>
+                    <span>Extracting MEP data…</span>
+                </div>
+
+                <!-- Stats -->
+                <div class="mep-stats hidden" id="mep-stats"></div>
+
+                <!-- Table -->
+                <div class="mep-table-wrapper hidden" id="mep-table-wrapper">
+                    <table id="mep-table" aria-label="Extracted MEP Elements">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Name</th>
+                                <th>Global ID</th>
+                                <th>Properties</th>
+                                <th>Location (m)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mep-tbody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Empty state -->
+                <div class="empty-state hidden" id="mep-empty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <p>No MEP elements found in this IFC file.</p>
+                </div>
+            </div>
+        </section>
+        <!-- ===== Clash Detection Panel ===== -->
+        <section class="mep-section hidden" id="clash-section" aria-label="Clash Detection Results">
+            <div class="mep-card">
+                <div class="mep-header">
+                    <h2>
+                        Clash Detection
+                        <span class="mep-badge" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">AABB</span>
+                    </h2>
+                    <span style="font-size:0.8rem;color:#64748b">Automated resolution strategies</span>
+                </div>
+
+                <div class="mep-loading hidden" id="clash-loading">
+                    <div class="mep-spinner"></div>
+                    <span>Detecting clashes…</span>
+                </div>
+
+                <div class="mep-stats hidden" id="clash-stats"></div>
+
+                <div class="mep-table-wrapper hidden" id="clash-table-wrapper">
+                    <table id="clash-table" aria-label="Detected Clashes">
+                        <thead>
+                            <tr>
+                                <th>Clash ID</th>
+                                <th>Move Element</th>
+                                <th>Fixed Element</th>
+                                <th>Type</th>
+                                <th>Position (orig → new)</th>
+                                <th>Direction / Offset</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clash-tbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="empty-state hidden" id="clash-empty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    <p style="color:#4ade80;font-weight:500">No clashes detected — all MEP elements are clear!</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

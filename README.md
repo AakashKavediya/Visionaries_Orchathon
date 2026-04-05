@@ -666,4 +666,8 @@ of this software...
 
 [⭐ Star this repo](https://github.com/yourusername/bimflow) · [🐛 Report a Bug](https://github.com/yourusername/bimflow/issues) · [💡 Request a Feature](https://github.com/yourusername/bimflow/issues)
 
+<<<<<<< HEAD
 </div>
+=======
+</div>
+>>>>>>> 8881cb116574f87e9a933534a7273bf3634114d7
