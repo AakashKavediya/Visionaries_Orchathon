@@ -16,3 +16,4 @@ stage2/extracted_elements.json
 stage2/clash_results.json
 stage2/extracted_elements.csv
 output
+.env

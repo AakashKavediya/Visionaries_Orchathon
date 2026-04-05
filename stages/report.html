@@ -483,6 +483,110 @@
       margin-top: 10px;
       border: 1px solid var(--border);
     }
+
+    #chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    #chatbot-toggle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: var(--accent1);
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #chatbot-window {
+      display: none;
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 350px;
+      height: 450px;
+      background-color: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    #chatbot-header {
+      padding: 15px;
+      background-color: var(--panel);
+      border-bottom: 1px solid var(--border);
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    #chatbot-messages {
+      flex-grow: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-message {
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+
+    .user-message {
+      background-color: #fffaf0;
+      color: #744210;
+      align-self: flex-end;
+    }
+
+    .bot-message {
+      background-color: #f7fafc;
+      color: #2d3748;
+      align-self: flex-start;
+    }
+    
+    .loading-message {
+      background-color: #f7fafc;
+      color: #a0aec0;
+      align-self: flex-start;
+      font-style: italic;
+    }
+
+    #chatbot-input-container {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    #chatbot-input {
+      flex-grow: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      outline: none;
+    }
+
+    #chatbot-send {
+      margin-left: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      background-color: var(--accent1);
+      color: white;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -630,6 +734,18 @@
 
     <div class="footer">
       Built from schema <span id="schemaVersion"></span> · generator <span id="generatorName"></span>
+    </div>
+  </div>
+
+  <div id="chatbot-container">
+    <button id="chatbot-toggle">?</button>
+    <div id="chatbot-window">
+      <div id="chatbot-header">Clash Copilot</div>
+      <div id="chatbot-messages"></div>
+      <div id="chatbot-input-container">
+        <input type="text" id="chatbot-input" placeholder="Ask about the data...">
+        <button id="chatbot-send">Send</button>
+      </div>
     </div>
   </div>
 
@@ -1132,8 +1248,88 @@ el("search").addEventListener("input", () => {
   renderClashes(rawData.classified_clashes || []);
 });
 
+function setupChatbot() {
+  const toggleButton = el("chatbot-toggle");
+  const chatWindow = el("chatbot-window");
+  const messagesContainer = el("chatbot-messages");
+  const input = el("chatbot-input");
+  const sendButton = el("chatbot-send");
+
+  toggleButton.addEventListener("click", () => {
+    const isHidden = chatWindow.style.display === "none" || chatWindow.style.display === "";
+    chatWindow.style.display = isHidden ? "flex" : "none";
+  });
+
+  const sendMessage = async () => {
+    const question = input.value.trim();
+    if (!question) return;
+
+    if (!rawData) {
+      alert("Please load the report data before asking questions.");
+      return;
+    }
+
+    addMessage(question, "user");
+    input.value = "";
+    addMessage("Thinking...", "loading");
+
+    try {
+      const response = await fetch("http://127.0.0.1:5001/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: question,
+          context: rawData, // Send the entire JSON data as context
+        }),
+      });
+
+      // Remove the "Thinking..." message
+      const loadingMessage = messagesContainer.querySelector('.loading-message');
+      if (loadingMessage) {
+        messagesContainer.removeChild(loadingMessage.parentNode);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      addMessage(result.answer, "bot");
+
+    } catch (error) {
+      console.error("Error asking chatbot:", error);
+      const loadingMessage = messagesContainer.querySelector('.loading-message');
+      if (loadingMessage) {
+        messagesContainer.removeChild(loadingMessage.parentNode);
+      }
+      addMessage("Sorry, I couldn't get an answer. Please check the console for errors.", "bot");
+    }
+  };
+
+  sendButton.addEventListener("click", sendMessage);
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  });
+
+  function addMessage(text, type) {
+    const messageWrapper = document.createElement('div');
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("chat-message", `${type}-message`);
+    messageElement.textContent = text;
+    messageWrapper.appendChild(messageElement);
+    messagesContainer.appendChild(messageWrapper);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+}
+
+
 window.addEventListener("DOMContentLoaded", async () => {
   setupTabs();
+  setupChatbot();
   // Try to load automatically from the same folder.
   try {
     await loadFromUrl("clash_rule_engine_report.json");
