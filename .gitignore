@@ -10,3 +10,9 @@ prototype/converted_ifc/
 stages/clash_results.csv
 stages/RVT_Model_MEP_for_Orkathon.ifc
 stages/hero.xml
+stages/clash_rule_engine_report.json
+stage2/run_manifest.json
+stage2/extracted_elements.json
+stage2/clash_results.json
+stage2/extracted_elements.csv
+output

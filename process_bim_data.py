@@ -122,7 +122,7 @@ def extract_ifc_data(ifc_path):
             "description": product.Description,
             "ifc_type": product.is_a(),
             "object_type": product.ObjectType,
-            "tag": product.Tag,
+            "tag": getattr(product, 'Tag', None),
             "spatial_container": get_element_spatial_container(product),
             "properties": get_property_sets(product),
             "quantities": get_quantities(product),
@@ -181,39 +181,54 @@ def parse_xml_clash_report(xml_path):
         }
 
         for result in clashtest.findall('.//clashresult'):
+            status_node = result.find('.//status')
+            distance_node = result.find('.//distance')
+            clashpoint_node = result.find('.//clashpoint/pos3f')
+            gridlocation_node = result.find('.//gridlocation')
+            createddate_node = result.find('.//createddate/date')
+            image_node = result.find('.//image')
+
             clash_result = {
                 "name": result.get('name'),
                 "guid": result.get('guid'),
-                "status": result.find('.//status').text,
-                "distance": float(result.find('.//distance').text),
+                "status": status_node.text if status_node is not None else None,
+                "distance": float(distance_node.text) if distance_node is not None else None,
                 "clash_point": {
-                    "x": float(result.find('.//clashpoint/pos3f').get('x')),
-                    "y": float(result.find('.//clashpoint/pos3f').get('y')),
-                    "z": float(result.find('.//clashpoint/pos3f').get('z')),
+                    "x": float(clashpoint_node.get('x')) if clashpoint_node is not None else None,
+                    "y": float(clashpoint_node.get('y')) if clashpoint_node is not None else None,
+                    "z": float(clashpoint_node.get('z')) if clashpoint_node is not None else None,
                 },
-                "grid_location": result.find('.//gridlocation').text,
-                "created_date": result.find('.//createddate/date').text,
-                "image_href": result.find('.//image').get('href'),
+                "grid_location": gridlocation_node.text if gridlocation_node is not None else None,
+                "created_date": createddate_node.text if createddate_node is not None else None,
+                "image_href": image_node.get('href') if image_node is not None else None,
                 "objects": [],
             }
 
             for obj in result.findall('.//clashobject'):
+                layer_node = obj.find('.//layer')
+                name_node = obj.find('.//name')
+                type_node = obj.find('.//type')
+
                 clash_object = {
                     "element_id": None,
-                    "layer": obj.find('.//layer').text,
-                    "item_name": obj.find('.//name').text,
-                    "item_type": obj.find('.//type').text,
+                    "layer": layer_node.text if layer_node is not None else None,
+                    "item_name": name_node.text if name_node is not None else None,
+                    "item_type": type_node.text if type_node is not None else None,
                     "smart_tags": {},
                 }
                 
                 # Find Element ID in smart tags
                 for tag in obj.findall('.//smarttag'):
                     prop = tag.find('property')
-                    name = prop.find('name').text
-                    value = prop.find('value').text
-                    clash_object["smart_tags"][name] = value
-                    if name == 'Element ID':
-                        clash_object['element_id'] = value
+                    if prop is not None:
+                        name_node = prop.find('name')
+                        value_node = prop.find('value')
+                        if name_node is not None and value_node is not None and name_node.text is not None:
+                            name = name_node.text
+                            value = value_node.text
+                            clash_object["smart_tags"][name] = value
+                            if name == 'Element ID':
+                                clash_object['element_id'] = value
 
                 clash_result["objects"].append(clash_object)
             

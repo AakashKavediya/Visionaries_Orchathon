@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MEP Clash Intelligence Report</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #2d3748;
+      --muted: #718096;
+      --panel: #f7fafc;
+      --border: #e2e8f0;
+      --accent1: #f59e0b; /* Amber */
+      --accent2: #fbbf24; /* Amber */
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 36px;
+      letter-spacing: -0.03em;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 800px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      position: relative;
+      top: 1px;
+    }
+
+    .tab-btn.active {
+      color: var(--accent1);
+      border-bottom-color: var(--accent1);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .controls {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filebox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .filebox input[type="file"] {
+      max-width: 340px;
+      color: var(--muted);
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: var(--accent1);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .btn.secondary {
+      background: var(--panel);
+      box-shadow: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .searchbar {
+      flex: 1;
+      min-width: 240px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .searchbar input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .searchbar input::placeholder { color: #a0aec0; }
+
+    .grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .card .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 10px;
+    }
+
+    .card .value {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 8px;
+      color: var(--accent1);
+    }
+
+    .card .sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .section + .section { margin-top: 24px; }
+
+    .section h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      letter-spacing: -.02em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .section h3 {
+      margin: 24px 0 12px;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1040px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .bars {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 200px 1fr 70px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .bar-label {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bar-track {
+      height: 14px;
+      border-radius: 999px;
+      background: #edf2f7;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent2);
+      min-width: 2px;
+    }
+
+    .bar-value {
+      color: var(--muted);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      padding: 14px;
+    }
+
+    .mini .k {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+
+    .mini .v {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--accent1);
+    }
+
+    .mini .t {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--panel);
+      color: var(--muted);
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      z-index: 1;
+    }
+
+    tbody td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fefcbf; /* Light yellow hover */ }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      border: 1px solid;
+    }
+    .CRITICAL { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
+    .HIGH { background: #fffaf0; color: #dd6b20; border-color: #feebc8; }
+    .MEDIUM { background: #fffff0; color: #d69e2e; border-color: #fefcbf; }
+    .LOW { background: #f0fff4; color: #2f855a; border-color: #c6f6d5; }
+    .INFO { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      padding: 10px 12px;
+      margin-top: 8px;
+    }
+    details[open] { background: #fefcbf; }
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text);
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .detail-box {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .detail-box h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .kv {
+      margin: 0;
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .kv b { color: var(--text); font-weight: 600; }
+
+    .callout {
+      border-left: 4px solid var(--accent2);
+      background: #fffff0;
+      padding: 14px;
+      border-radius: var(--radius);
+      color: #744210;
+      line-height: 1.6;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      margin: 3px 4px 0 0;
+    }
+
+    .footer {
+      margin: 24px 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .pagination button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+    .pagination span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>MEP Clash Intelligence Report</h1>
+      <p>
+        Professional HTML report for the v4 rule-engine output. This page reads the JSON, summarizes the model-wide findings,
+        explains the clearance logic, and lets you inspect every classified clash with its rerouting candidates.
+      </p>
+    </div>
+
+    <div class="controls">
+      <div class="filebox">
+        <input type="file" id="fileInput" accept=".json,application/json" />
+        <button class="btn" id="loadBtn">Load JSON</button>
+        <button class="btn secondary" id="demoBtn">Load `clash_rule_engine_report.json`</button>
+      </div>
+      <div class="searchbar">
+        <span style="color:#a0aec0">⌕</span>
+        <input id="search" type="text" placeholder="Search clash id, pair type, rule, level, element id..." />
+      </div>
+    </div>
+    <div class="callout" id="fileNote" style="margin-bottom: 24px;">
+      Upload the JSON file or place it beside this HTML file and click “Load `clash_rule_engine_report.json`”.
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+      <button class="tab-btn" data-tab="clashes">Clashes</button>
+      <button class="tab-btn" data-tab="rules">Rules</button>
+      <button class="tab-btn" data-tab="hotspots">Hotspots</button>
+    </div>
+
+    <div id="dashboard" class="tab-content active">
+      <div class="grid">
+        <div class="cards" id="summaryCards"></div>
+        <div class="section">
+          <h2>Project Overview</h2>
+          <div class="two-col">
+            <div>
+              <div class="callout" id="overviewText"></div>
+              <h3>Key project data</h3>
+              <div class="stats-grid" id="quickStats"></div>
+            </div>
+            <div>
+              <h3>Resolution / risk snapshot</h3>
+              <div class="stats-grid" id="riskStats"></div>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Distribution Summary</h2>
+          <div class="two-col">
+            <div>
+              <h3>Severity</h3>
+              <div class="bars" id="severityBars"></div>
+              <h3 style="margin-top:18px;">Floor level</h3>
+              <div class="bars" id="floorBars"></div>
+              <h3 style="margin-top:18px;">Rule triggered</h3>
+              <div class="bars" id="ruleBars"></div>
+            </div>
+            <div>
+              <h3>Clash pair types</h3>
+              <div class="bars" id="pairBars"></div>
+              <h3 style="margin-top:18px;">Best rerouting strategy</h3>
+              <div class="bars" id="strategyBars"></div>
+              <h3 style="margin-top:18px;">Cascade risk</h3>
+              <div class="bars" id="cascadeBars"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="clashes" class="tab-content">
+      <div class="section">
+        <h2>Classified Clashes</h2>
+        <p class="muted">
+          Each clash row shows the computed severity, the applicable rule, the recommended fix, and the full set of candidate rerouting
+          strategies. Expand any row to inspect the object pair and every candidate.
+        </p>
+        <div class="table-wrap">
+          <table id="clashTable">
+            <thead>
+              <tr>
+                <th>Clash</th>
+                <th>Severity</th>
+                <th>Priority</th>
+                <th>Pair</th>
+                <th>Level</th>
+                <th>Rule</th>
+                <th>Penetration</th>
+                <th>Required</th>
+                <th>Best Action</th>
+              </tr>
+            </thead>
+            <tbody id="clashBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="paginationControls"></div>
+      </div>
+    </div>
+
+    <div id="rules" class="tab-content">
+      <div class="section">
+        <h2>Clearance Rules Reference</h2>
+        <p class="muted">
+          These are the rules used by the engine. The escalation note is especially important because it tells you when the base
+          clearance should be increased.
+        </p>
+        <div class="table-wrap">
+          <table class="rules-table">
+            <thead>
+              <tr>
+                <th>Rule ID</th>
+                <th>Category A</th>
+                <th>Category B</th>
+                <th>Min Clearance (mm)</th>
+                <th>Standard</th>
+                <th>Safety Critical</th>
+                <th>Rationale</th>
+                <th>Escalation Note</th>
+              </tr>
+            </thead>
+            <tbody id="rulesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="hotspots" class="tab-content">
+      <div class="section">
+        <h2>Clash Graph & Hotspots</h2>
+        <div class="two-col">
+          <div class="stats-grid" id="graphStats"></div>
+          <div>
+            <h3>Hotspot elements</h3>
+            <div id="hotspotsList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Built from schema <span id="schemaVersion"></span> · generator <span id="generatorName"></span>
+    </div>
+  </div>
+
+<script>
+let rawData = null;
+let filteredClashes = [];
+let currentPage = 1;
+const clashesPerPage = 50;
+
+const el = (id) => document.getElementById(id);
+
+function esc(v) {
+  if (v === null || v === undefined) return "";
+  return String(v)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function num(v, digits = 2) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toFixed(digits) : "—";
+}
+
+function getEntriesSorted(obj) {
+  return Object.entries(obj || {}).sort((a, b) => Number(b[1]) - Number(a[1]));
+}
+
+function barHTML(label, value, max, extra = "") {
+  const pct = max > 0 ? Math.max(2, (value / max) * 100) : 0;
+  return `
+    <div class="bar-row">
+      <div class="bar-label" title="${esc(label)}">${esc(label)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <div class="bar-value">${esc(value)} ${extra}</div>
+    </div>
+  `;
+}
+
+function metricCard(label, value, sub) {
+  return `
+    <div class="card">
+      <div class="label">${esc(label)}</div>
+      <div class="value">${esc(value)}</div>
+      <div class="sub">${esc(sub || "")}</div>
+    </div>
+  `;
+}
+
+function miniCard(k, v, t) {
+  return `
+    <div class="mini">
+      <div class="k">${esc(k)}</div>
+      <div class="v">${esc(v)}</div>
+      <div class="t">${esc(t || "")}</div>
+    </div>
+  `;
+}
+
+function renderMeta(data) {
+  el("schemaVersion").textContent = data.schema_version || "—";
+  el("generatorName").textContent = data.generator || "—";
+}
+
+function renderOverview(data) {
+  const s = data.summary || {};
+  const severity = s.by_severity || {};
+  const floor = s.by_floor_level || {};
+  const rules = s.by_rule_triggered || {};
+  const strategies = s.by_best_strategy || {};
+  const cascade = s.by_cascade_risk || {};
+  const graph = s.clash_graph || {};
+  const params = s.parameters || {};
+
+  el("summaryCards").innerHTML = [
+    metricCard("Total Clashes", s.total_clashes ?? "—", "All clashes processed by the engine."),
+    metricCard("Safety Critical", s.safety_critical_count ?? "—", "Clashes flagged as safety-critical."),
+    metricCard("Escalated", s.escalated_count ?? "—", "Clashes escalated beyond the base case."),
+    metricCard("Clash-Free Resolutions", s.resolution_stats?.clash_free_resolutions ?? "—", "Recommended reroutes with no new clashes."),
+    metricCard("Avg Penetration", `${num(s.avg_penetration_mm)} mm`, "Average overlap depth across all clashes."),
+    metricCard("Max Penetration", `${num(s.max_penetration_mm)} mm`, "Largest overlap depth in the report."),
+    metricCard("Clearance Rules", params.clearance_rules_count ?? "—", "Rules used by the rule engine."),
+    metricCard("Mapped Element Types", params.element_types_mapped ?? "—", "Element categories normalized by the engine.")
+  ].join("");
+
+  el("overviewText").innerHTML = `
+    This report is generated by <b>${esc(data.generator || "the rule engine")}</b> from <b>${esc(data.source_file || "the source XML")}</b>.
+    It is not only a clash list; it is a decision layer that classifies each clash, maps it to a clearance rule, computes the best
+    rerouting strategy, and checks whether the candidate move remains clash-free.
+  `;
+
+  el("quickStats").innerHTML = [
+    miniCard("Critical", severity.CRITICAL ?? 0, "Most severe clashes."),
+    miniCard("High", severity.HIGH ?? 0, "Needs immediate review."),
+    miniCard("Medium", severity.MEDIUM ?? 0, "Moderate coordination impact."),
+    miniCard("Low", severity.LOW ?? 0, "Smaller coordination issues."),
+    miniCard("Info", severity.INFO ?? 0, "Informational findings."),
+    miniCard("Floor peak", Object.entries(floor).sort((a,b)=>b[1]-a[1])[0]?.[0] || "—", "Most clash-heavy level."),
+    miniCard("Top rule", Object.entries(rules).sort((a,b)=>b[1]-a[1])[0]?.[0] || "—", "Most frequently triggered rule."),
+    miniCard("Largest cluster", graph.largest_cluster_size ?? "—", "From the clash graph.")
+  ].join("");
+
+  el("riskStats").innerHTML = [
+    miniCard("Avg degree", num(graph.avg_degree, 2) ?? "—", "Average graph connectivity."),
+    miniCard("Connected clusters", graph.connected_clusters ?? "—", "Clusters in the clash graph."),
+    miniCard("Spatial index elements", params.spatial_index_elements ?? "—", "Elements indexed for spatial checks."),
+    miniCard("Reroute strategies", params.rerouting_strategies_count ?? "—", "Candidate movement types."),
+    miniCard("Cascade MEDIUM", cascade.MEDIUM ?? 0, "Moderate propagation risk."),
+    miniCard("Cascade HIGH", cascade.HIGH ?? 0, "High propagation risk."),
+    miniCard("Cascade LOW", cascade.LOW ?? 0, "Low propagation risk."),
+    miniCard("Cascade NONE", cascade.NONE ?? 0, "No cascade risk.")
+  ].join("");
+
+  el("graphStats").innerHTML = [
+    miniCard("Connected clusters", graph.connected_clusters ?? "—", "Number of graph components."),
+    miniCard("Largest cluster size", graph.largest_cluster_size ?? "—", "Max connected subgraph size."),
+    miniCard("Average degree", num(graph.avg_degree, 2) ?? "—", "Average links per node."),
+    miniCard("Hotspot elements", (graph.hotspot_elements || []).length, "Elements appearing most often in clashes.")
+  ].join("");
+
+  const maxSeverity = Math.max(...Object.values(severity), 1);
+  const maxFloor = Math.max(...Object.values(floor), 1);
+  const maxRules = Math.max(...Object.values(rules), 1);
+  const maxPair = Math.max(...Object.values(s.by_clash_pair_type || {}), 1);
+  const maxStrategy = Math.max(...Object.values(strategies), 1);
+  const maxCascade = Math.max(...Object.values(cascade), 1);
+
+  el("severityBars").innerHTML = getEntriesSorted(severity).map(([k,v]) => barHTML(k, v, maxSeverity)).join("");
+  el("floorBars").innerHTML = getEntriesSorted(floor).map(([k,v]) => barHTML(k, v, maxFloor)).join("");
+  el("ruleBars").innerHTML = getEntriesSorted(rules).map(([k,v]) => barHTML(k, v, maxRules)).join("");
+  el("pairBars").innerHTML = getEntriesSorted(s.by_clash_pair_type || {}).map(([k,v]) => barHTML(k, v, maxPair)).join("");
+  el("strategyBars").innerHTML = getEntriesSorted(strategies).map(([k,v]) => barHTML(k, v, maxStrategy)).join("");
+  el("cascadeBars").innerHTML = getEntriesSorted(cascade).map(([k,v]) => barHTML(k, v, maxCascade)).join("");
+
+  const hotspots = (graph.hotspot_elements || [])
+    .map(h => `
+      <div class="mini" style="margin-bottom:10px">
+        <div class="k">Element ID</div>
+        <div class="v">${esc(h.element_id)}</div>
+        <div class="t">${esc(h.clash_count)} clashes</div>
+      </div>
+    `).join("");
+
+  el("hotspotsList").innerHTML = hotspots || `<div class="muted">No hotspot data available.</div>`;
+}
+
+function renderRules(rules) {
+  el("rulesBody").innerHTML = (rules || []).map(r => `
+    <tr>
+      <td><b>${esc(r.rule_id)}</b></td>
+      <td>${esc(r.category_a)}</td>
+      <td>${esc(r.category_b)}</td>
+      <td>${esc(r.min_clearance_mm)}</td>
+      <td>${esc(r.standard)}</td>
+      <td>${r.is_safety_critical ? '<span class="badge HIGH">Yes</span>' : '<span class="badge INFO">No</span>'}</td>
+      <td>${esc(r.rationale)}</td>
+      <td>${esc(r.escalation_note || "—")}</td>
+    </tr>
+  `).join("");
+}
+
+function candidateTable(cands) {
+  if (!Array.isArray(cands) || !cands.length) {
+    return `<div class="muted">No candidate strategies available.</div>`;
+  }
+
+  return `
+    <div class="table-wrap" style="margin-top:10px">
+      <table style="min-width:1200px">
+        <thead>
+          <tr>
+            <th>Strategy</th>
+            <th>Label</th>
+            <th>Offset (mm)</th>
+            <th>ΔX</th>
+            <th>ΔY</th>
+            <th>ΔZ</th>
+            <th>New Position (m)</th>
+            <th>Clash Free</th>
+            <th>Score</th>
+            <th>New Clashes</th>
+            <th>Warning</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${cands.map(c => `
+            <tr>
+              <td><b>${esc(c.strategy)}</b></td>
+              <td>${esc(c.strategy_label || c.best_strategy_label || "")}</td>
+              <td>${esc(c.offset_mm ?? "—")}</td>
+              <td>${esc(c.delta_mm?.x ?? "—")}</td>
+              <td>${esc(c.delta_mm?.y ?? "—")}</td>
+              <td>${esc(c.delta_mm?.z ?? "—")}</td>
+              <td>${c.new_position_m ? `(${num(c.new_position_m.x)}, ${num(c.new_position_m.y)}, ${num(c.new_position_m.z)})` : "—"}</td>
+              <td>${c.is_clash_free ? '<span class="badge LOW">Yes</span>' : '<span class="badge HIGH">No</span>'}</td>
+              <td>${esc(c.score ?? "—")}</td>
+              <td>${esc(c.new_clashes_count ?? 0)}</td>
+              <td>${esc(c.warning || "—")}</td>
+            </tr>
+            ${Array.isArray(c.new_clashes_detail) && c.new_clashes_detail.length ? `
+              <tr>
+                <td colspan="11">
+                  <details>
+                    <summary>New clashes introduced by this candidate (${c.new_clashes_detail.length})</summary>
+                    <div style="margin-top:10px" class="table-wrap">
+                      <table style="min-width:900px">
+                        <thead>
+                          <tr>
+                            <th>Neighbour EID</th>
+                            <th>Neighbour Label</th>
+                            <th>Gap (mm)</th>
+                            <th>Required (mm)</th>
+                            <th>Rule ID</th>
+                            <th>Safety Critical</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${c.new_clashes_detail.map(n => `
+                            <tr>
+                              <td>${esc(n.neighbour_eid)}</td>
+                              <td>${esc(n.neighbour_label)}</td>
+                              <td>${esc(n.gap_mm)}</td>
+                              <td>${esc(n.required_mm)}</td>
+                              <td>${esc(n.rule_id)}</td>
+                              <td>${n.is_safety_critical ? '<span class="badge HIGH">Yes</span>' : '<span class="badge INFO">No</span>'}</td>
+                            </tr>
+                          `).join("")}
+                        </tbody>
+                      </table>
+                    </div>
+                  </details>
+                </td>
+              </tr>
+            ` : ""}
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderClashes(allClashes) {
+  const q = (el("search").value || "").trim().toLowerCase();
+
+  const filtered = (allClashes || []).filter(c => {
+    const blob = [
+      c.clash_id,
+      c.guid,
+      c.clash_pair_label,
+      c.applicable_rule_id,
+      c.level,
+      c.grid_ref,
+      c.grid_location,
+      c.severity,
+      c.element_1?.element_id,
+      c.element_1?.name,
+      c.element_2?.element_id,
+      c.element_2?.name
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    return !q || blob.includes(q);
+  });
+
+  filteredClashes = filtered;
+
+  const startIndex = (currentPage - 1) * clashesPerPage;
+  const endIndex = startIndex + clashesPerPage;
+  const paginatedClashes = filteredClashes.slice(startIndex, endIndex);
+
+  el("clashBody").innerHTML = paginatedClashes.map((c, idx) => {
+    const res = c.resolution || {};
+    const e1 = c.element_1 || {};
+    const e2 = c.element_2 || {};
+    const candidates = Array.isArray(res.all_candidates) ? res.all_candidates : [];
+
+    return `
+      <tr>
+        <td><b>${esc(c.clash_id)}</b><br><span class="fine">${esc(c.guid || "")}</span></td>
+        <td><span class="badge ${esc(c.severity || "INFO")}">${esc(c.severity || "INFO")}</span></td>
+        <td>${esc(c.priority_score ?? "—")}</td>
+        <td>${esc(c.clash_pair_label || "—")}</td>
+        <td>${esc(c.level || "—")}</td>
+        <td>
+          <span class="tag">${esc(c.applicable_rule_id || "—")}</span><br>
+          <span class="fine">${esc(c.applicable_standard || "")}</span>
+        </td>
+        <td>${num(c.penetration_mm)}</td>
+        <td>${num(c.required_clearance_mm)}</td>
+        <td>
+          <b>${esc(res.best_strategy_label || res.best_strategy || "—")}</b><br>
+          <span class="fine">${esc(res.best_action || "")}</span>
+          ${res.cascade_risk ? `<br><span class="badge ${res.cascade_risk === "HIGH" ? "HIGH" : (res.cascade_risk === "MEDIUM" ? "MEDIUM" : "LOW")}">${esc(res.cascade_risk)} cascade risk</span>` : ""}
+        </td>
+      </tr>
+      <tr>
+        <td colspan="9">
+          <details>
+            <summary>Open full clash details</summary>
+
+            <div class="detail-grid">
+              <div class="detail-box">
+                <h4>Clash identification</h4>
+                <p class="kv">
+                  <span><b>Clash ID:</b> ${esc(c.clash_id)}</span>
+                  <span><b>GUID:</b> ${esc(c.guid)}</span>
+                  <span><b>Created:</b> ${esc(c.created_date || "—")}</span>
+                  <span><b>Grid:</b> ${esc(c.grid_location || "—")}</span>
+                  <span><b>Grid ref:</b> ${esc(c.grid_ref || "—")}</span>
+                  <span><b>Level:</b> ${esc(c.level || "—")}</span>
+                </p>
+              </div>
+
+              <div class="detail-box">
+                <h4>Clash metrics</h4>
+                <p class="kv">
+                  <span><b>Severity:</b> ${esc(c.severity || "—")}</span>
+                  <span><b>Priority score:</b> ${esc(c.priority_score ?? "—")}</span>
+                  <span><b>Penetration:</b> ${num(c.penetration_mm)} mm</span>
+                  <span><b>Required clearance:</b> ${num(c.required_clearance_mm)} mm</span>
+                  <span><b>Safety critical:</b> ${c.is_safety_critical ? "Yes" : "No"}</span>
+                  <span><b>Escalation note:</b> ${esc(c.escalation_note || "—")}</span>
+                </p>
+              </div>
+
+              <div class="detail-box">
+                <h4>Clash point</h4>
+                <p class="kv">
+                  <span><b>X:</b> ${num(c.clash_point_xyz?.x)}</span>
+                  <span><b>Y:</b> ${num(c.clash_point_xyz?.y)}</span>
+                  <span><b>Z:</b> ${num(c.clash_point_xyz?.z)}</span>
+                </p>
+              </div>
+
+              <div class="detail-box">
+                <h4>Resolution summary</h4>
+                <p class="kv">
+                  <span><b>Element to reroute:</b> ${esc(res.element_to_reroute || "—")}</span>
+                  <span><b>Type label:</b> ${esc(res.element_type_label || "—")}</span>
+                  <span><b>Best strategy:</b> ${esc(res.best_strategy || "—")}</span>
+                  <span><b>Best strategy label:</b> ${esc(res.best_strategy_label || "—")}</span>
+                  <span><b>Best offset:</b> ${num(res.best_offset_mm)} mm</span>
+                  <span><b>Fully clash free:</b> ${res.is_fully_clash_free ? "Yes" : "No"}</span>
+                </p>
+              </div>
+
+              <div class="detail-box">
+                <h4>Element 1</h4>
+                <p class="kv">
+                  <span><b>Element ID:</b> ${esc(e1.element_id || "—")}</span>
+                  <span><b>Name:</b> ${esc(e1.name || "—")}</span>
+                  <span><b>Layer:</b> ${esc(e1.layer || "—")}</span>
+                  <span><b>Category:</b> ${esc(e1.category || "—")}</span>
+                  <span><b>Sub-type:</b> ${esc(e1.sub_type || "—")}</span>
+                  <span><b>Medium:</b> ${esc(e1.medium || "—")}</span>
+                  <span><b>System label:</b> ${esc(e1.system_label || "—")}</span>
+                </p>
+              </div>
+
+              <div class="detail-box">
+                <h4>Element 2</h4>
+                <p class="kv">
+                  <span><b>Element ID:</b> ${esc(e2.element_id || "—")}</span>
+                  <span><b>Name:</b> ${esc(e2.name || "—")}</span>
+                  <span><b>Layer:</b> ${esc(e2.layer || "—")}</span>
+                  <span><b>Category:</b> ${esc(e2.category || "—")}</span>
+                  <span><b>Sub-type:</b> ${esc(e2.sub_type || "—")}</span>
+                  <span><b>Medium:</b> ${esc(e2.medium || "—")}</span>
+                  <span><b>System label:</b> ${esc(e2.system_label || "—")}</span>
+                </p>
+              </div>
+            </div>
+
+            <h3>All candidate strategies</h3>
+            ${candidateTable(candidates)}
+          </details>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderPaginationControls() {
+  const totalPages = Math.ceil(filteredClashes.length / clashesPerPage);
+  const controls = el("paginationControls");
+
+  if (totalPages <= 1) {
+    controls.innerHTML = "";
+    return;
+  }
+
+  controls.innerHTML = `
+    <button id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${currentPage} of ${totalPages}</span>
+    <button id="nextPage" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+  `;
+
+  el("prevPage").addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderClashes(rawData.classified_clashes || []);
+    }
+  });
+
+  el("nextPage").addEventListener("click", () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderClashes(rawData.classified_clashes || []);
+    }
+  });
+}
+
+function loadData(data) {
+  rawData = data;
+  currentPage = 1;
+
+  renderMeta(data);
+  renderOverview(data);
+  renderRules(data.clearance_rules_reference || []);
+  renderClashes(data.classified_clashes || []);
+
+  el("fileNote").innerHTML = `
+    Loaded <b>${esc(data.source_file || "JSON file")}</b> successfully. 
+    The report contains <b>${esc(data.summary?.total_clashes ?? "—")}</b> clashes, 
+    <b>${esc(data.summary?.safety_critical_count ?? "—")}</b> safety-critical clashes, 
+    and <b>${esc(data.summary?.escalated_count ?? "—")}</b> escalated clashes.
+  `;
+}
+
+async function loadFromUrl(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+  const data = await res.json();
+  loadData(data);
+}
+
+function setupTabs() {
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const tabContents = document.querySelectorAll(".tab-content");
+
+  tabButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      const tab = button.dataset.tab;
+
+      tabButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      tabContents.forEach(content => {
+        if (content.id === tab) {
+          content.classList.add("active");
+        } else {
+          content.classList.remove("active");
+        }
+      });
+    });
+  });
+}
+
+el("loadBtn").addEventListener("click", async () => {
+  const file = el("fileInput").files?.[0];
+  if (!file) {
+    alert("Choose a JSON file first.");
+    return;
+  }
+  const text = await file.text();
+  loadData(JSON.parse(text));
+});
+
+el("demoBtn").addEventListener("click", async () => {
+  try {
+    await loadFromUrl("clash_rule_engine_report.json");
+  } catch (err) {
+    alert(
+      "Could not load clash_rule_engine_report.json automatically.\n\n" +
+      "Either serve this HTML and the JSON from the same folder, or upload the JSON file using the chooser.\n\n" +
+      String(err)
+    );
+  }
+});
+
+el("search").addEventListener("input", () => {
+  if (!rawData) return;
+  currentPage = 1;
+  renderClashes(rawData.classified_clashes || []);
+});
+
+window.addEventListener("DOMContentLoaded", async () => {
+  setupTabs();
+  // Try to load automatically from the same folder.
+  try {
+    await loadFromUrl("clash_rule_engine_report.json");
+  } catch (_) {
+    // Silent fallback; user can upload manually.
+  }
+});
+</script>
+</body>
+</html>
