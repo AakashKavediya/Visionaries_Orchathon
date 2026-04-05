@@ -7,3 +7,6 @@ prototype/converted_ifc/
 *.py[cod]
 .venv
 .vs
+stages/clash_results.csv
+stages/RVT_Model_MEP_for_Orkathon.ifc
+stages/hero.xml
